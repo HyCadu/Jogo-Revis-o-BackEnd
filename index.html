@@ -1,0 +1,580 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Jogo de Revisão</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Poppins', sans-serif;
+            background: linear-gradient(135deg, #6a0dad, #ff8c00);
+            color: #ffffff;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+        }
+        .game-container {
+            max-width: 800px;
+            padding: 30px;
+            background-color: #ffffff;
+            color: #4c1a57;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            border-radius: 20px;
+            position: relative;
+            overflow: hidden;
+            animation: fadeIn 1s ease-in-out;
+        }
+        .game-container:before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, #ff8c00 20%, #6a0dad 80%);
+            z-index: -1;
+            animation: spinBg 8s linear infinite;
+        }
+        @keyframes spinBg {
+            0% { transform: rotate(0); }
+            100% { transform: rotate(360deg); }
+        }
+        @keyframes fadeIn {
+            0% { opacity: 0; transform: scale(0.8); }
+            100% { opacity: 1; transform: scale(1); }
+        }
+        h1 {
+            color: #6a0dad;
+            font-weight: bold;
+            animation: pulse 1.5s infinite;
+        }
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+        .option {
+            border: 2px solid transparent;
+            border-radius: 10px;
+            background-color: #f7f3fc;
+            color: #6a0dad;
+            padding: 15px;
+            margin: 10px 0;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 3px 10px rgba(0, 0, 0, 0.1);
+        }
+        .option:hover {
+            background-color: #e3d3f8;
+            border-color: #6a0dad;
+            transform: scale(1.05);
+        }
+        .correct {
+            background-color: #28a745 !important;
+            color: white;
+        }
+        .wrong {
+            background-color: #dc3545 !important;
+            color: white;
+        }
+        #feedback {
+            font-weight: bold;
+            margin-top: 20px;
+            animation: bounce 1s ease-in-out;
+        }
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+        #nextBtn, #restartBtn {
+            margin-top: 20px;
+        }
+        #nextBtn {
+            background: #ff8c00;
+            border: none;
+        }
+        #restartBtn {
+            background: #6a0dad;
+            border: none;
+        }
+        #nextBtn:hover, #restartBtn:hover {
+            opacity: 0.8;
+        }
+        .footer {
+            text-align: center;
+            margin-top: 20px;
+            font-size: 14px;
+            color: #ffffff;
+        }
+    </style>
+</head>
+<body>
+    <div class="game-container text-center">
+        <h1 class="mb-4">Jogo de Revisão Back End 🌐</h1>
+        <div> Desenvolvido por Cadu Kar Alho </div>
+        <div id="counter" class="mb-3">Respostas corretas: 0</div>
+        <div id="question" class="h5 mb-4">Carregando pergunta...</div>
+        <div id="options" class="mb-3"></div>
+        <div id="feedback" class="alert" style="display: none;"></div>
+        <button id="nextBtn" class="btn btn-lg text-white" style="display: none;" onclick="nextQuestion()">Próxima Pergunta</button>
+        <button id="restartBtn" class="btn btn-lg text-white" style="display: none;" onclick="restartGame()">Reiniciar Jogo</button>
+    </div>
+
+    <script>
+        let currentQuestionIndex = 0;
+        let correctAnswers = 0;
+
+        const questions = [
+    {
+        question: "Qual a principal função do ORM em uma aplicação Java?",
+        options: [
+            "Facilitar a transição de dados entre aplicações Java e bancos de dados relacionais sem necessidade de SQL específico.",
+            "Proteger a aplicação de falhas no banco de dados.",
+            "Garantir a integridade referencial do banco de dados.",
+            "Monitorar o desempenho da aplicação."
+        ],
+        answer: "a"
+    },
+    {
+        question: "O que significa a anotação @Entity em JPA?",
+        options: [
+            "Indica que uma classe é uma entidade e deve ser mapeada para uma tabela no banco de dados.",
+            "Define a chave estrangeira da classe.",
+            "Converte a classe em uma interface de banco de dados.",
+            "Altera o nome padrão de uma coluna no banco de dados."
+        ],
+        answer: "a"
+    },
+    {
+        question: "Qual anotação é usada para definir o atributo como chave primária de uma entidade em JPA?",
+        options: [
+            "@Column",
+            "@Id",
+            "@PrimaryKey",
+            "@Primary"
+        ],
+        answer: "b"
+    },
+    {
+        question: "Qual das opções abaixo define corretamente a anotação @Table?",
+        options: [
+            "Altera o nome de uma coluna na tabela do banco de dados.",
+            "Define que uma classe Java representa uma tabela no banco de dados.",
+            "Especifica o nome da tabela associada a uma entidade.",
+            "Indica uma chave estrangeira."
+        ],
+        answer: "c"
+    },
+    {
+        question: "Qual dos seguintes métodos pertence à interface JpaRepository?",
+        options: [
+            "findOne()",
+            "updateOne()",
+            "findAll()",
+            "saveAll()"
+        ],
+        answer: "c"
+    },
+    {
+        question: "Qual das opções a seguir é uma característica da JPQL?",
+        options: [
+            "Utiliza SQL puro para manipulação de dados.",
+            "Permite consultas baseadas em objetos e suas propriedades.",
+            "Requer consultas nativas de banco de dados.",
+            "Não possui suporte a filtragem de dados."
+        ],
+        answer: "b"
+    },
+    {
+        question: "Para que serve o arquivo persistence.xml em JPA?",
+        options: [
+            "Configura o comportamento do cache na aplicação.",
+            "Define as informações do banco de dados e do provedor JPA utilizado.",
+            "Configura as rotas para APIs REST.",
+            "Gerencia transações de banco de dados."
+        ],
+        answer: "b"
+    },
+    {
+        question: "Qual das alternativas NÃO é uma anotação usada em JPA?",
+        options: [
+            "@OneToMany",
+            "@Column",
+            "@PrimaryKey",
+            "@GeneratedValue"
+        ],
+        answer: "c"
+    },
+    {
+        question: "Qual anotação é usada para ignorar um atributo durante o mapeamento em JPA?",
+        options: [
+            "@Ignore",
+            "@Exclude",
+            "@Transient",
+            "@Skip"
+        ],
+        answer: "c"
+    },
+    {
+        question: "Qual função da anotação @GeneratedValue em JPA?",
+        options: [
+            "Indica que o valor do campo será definido manualmente.",
+            "Indica que o valor do campo será gerado automaticamente pelo banco de dados.",
+            "Define a chave estrangeira de uma entidade.",
+            "Define uma consulta personalizada em JPQL."
+        ],
+        answer: "b"
+    },
+    {
+        question: "Em REST, qual método HTTP é usado para criar um novo recurso?",
+        options: [
+            "GET",
+            "POST",
+            "PUT",
+            "DELETE"
+        ],
+        answer: "b"
+    },
+    {
+        question: "Qual das opções a seguir caracteriza o método GET em REST?",
+        options: [
+            "Método seguro, pois é usado apenas para leitura e não altera o recurso.",
+            "Método inseguro, pois altera o estado do recurso.",
+            "Método não idempotente.",
+            "Método exclusivo para deletar dados."
+        ],
+        answer: "a"
+    },
+    {
+        question: "Em REST, qual código de status indica que um recurso foi criado com sucesso?",
+        options: [
+            "200 OK",
+            "201 Created",
+            "404 Not Found",
+            "500 Internal Server Error"
+        ],
+        answer: "b"
+    },
+    {
+        question: "O que significa HATEOAS no contexto de REST?",
+        options: [
+            "Técnica para compilar arquivos JSON.",
+            "Técnica para serializar objetos Java.",
+            "Técnica para incluir links nas respostas, permitindo navegação entre recursos.",
+            "Técnica para armazenar estado de sessão."
+        ],
+        answer: "c"
+    },
+    {
+        question: "Qual URL é mais adequada para listar todas as tarefas de um usuário específico em uma API REST?",
+        options: [
+            "/usuario/{id}/listarTarefas",
+            "/usuarios/{id}/tarefas",
+            "/tarefas/listar/{idUsuario}",
+            "/usuarios/{id}/tarefa"
+        ],
+        answer: "b"
+    },
+    {
+        question: "Qual método HTTP é usado para atualizar um recurso parcialmente em REST?",
+        options: [
+            "GET",
+            "PUT",
+            "PATCH",
+            "DELETE"
+        ],
+        answer: "c"
+    },
+    {
+        question: "Qual código de status indica que a solicitação não pôde ser processada devido a um erro no cliente?",
+        options: [
+            "200",
+            "500",
+            "403",
+            "400"
+        ],
+        answer: "d"
+    },
+    {
+        question: "Qual é o objetivo principal da JPQL em JPA?",
+        options: [
+            "Consultar dados usando SQL puro.",
+            "Consultar dados com foco em objetos, sem depender do banco de dados específico.",
+            "Consultar dados diretamente na interface gráfica.",
+            "Atualizar automaticamente todos os dados da aplicação."
+        ],
+        answer: "b"
+    },
+    {
+        question: "Em uma consulta JPQL, como você faria uma ordenação por nome em ordem crescente?",
+        options: [
+            "ORDER BY nome DESC",
+            "ORDER BY nome ASC",
+            "ORDER BY nome CRESC",
+            "SORT nome"
+        ],
+        answer: "b"
+    },
+    {
+        question: "Qual método é usado para limitar a quantidade de resultados retornados em uma consulta JPQL?",
+        options: [
+            "setLimit()",
+            "setRange()",
+            "setMaxResults()",
+            "setTop()"
+        ],
+        answer: "c"
+    },
+    {
+        question: "Qual a função principal do JpaRepository no Spring Data JPA?",
+        options: [
+            "Gerenciar transações no banco de dados.",
+            "Prover métodos padrão para CRUD (Create, Read, Update, Delete) de entidades.",
+            "Gerenciar dependências na aplicação.",
+            "Substituir o uso de SQL nativo em uma aplicação."
+        ],
+        answer: "b"
+    },
+    {
+        question: "Como o Spring Data JPA define métodos de pesquisa em repositórios?",
+        options: [
+            "Usando interfaces que herdam de JpaRepository.",
+            "Usando SQL em classes de modelo.",
+            "Por meio de classes RepositoryFactory.",
+            "Usando um arquivo XML específico."
+        ],
+        answer: "a"
+    },
+    {
+        question: "Em Spring Data JPA, como um método de repositório personalizado é criado usando JPQL?",
+        options: [
+            "Colocando a consulta diretamente no JpaRepository.",
+            "Usando a anotação @Query em um método no repositório.",
+            "Definindo a consulta dentro do arquivo application.properties.",
+            "Escrevendo a consulta em um arquivo de configuração XML."
+        ],
+        answer: "b"
+    },
+    {
+        question: "No contexto de CRUD, qual operação está associada ao método HTTP POST em uma API REST?",
+        options: [
+            "Leitura de dados",
+            "Atualização de dados",
+            "Criação de um novo recurso",
+            "Exclusão de um recurso"
+        ],
+        answer: "c"
+    },
+    {
+        question: "Na operação CRUD de 'Delete', qual método HTTP correspondente é usado para remover um recurso de uma API REST?",
+        options: [
+            "POST",
+            "PUT",
+            "DELETE",
+            "PATCH"
+        ],
+        answer: "c"
+    },
+    {
+        question: "Qual das seguintes funcionalidades o JPA oferece?",
+        options: [
+            "Componentes para CRUD (Create, Read, Update, Delete)",
+            "Manipulação direta de arquivos JSON",
+            "Ferramentas para testes de interface",
+            "Gerenciamento de sessão de usuário"
+        ],
+        answer: "a"
+    },
+    {
+        question: "Quando é necessário usar a anotação @Table em JPA?",
+        options: [
+            "Quando a tabela no banco deve ter um nome diferente do nome da classe",
+            "Para definir chaves estrangeiras na tabela",
+            "Quando a classe possui atributos privados",
+            "Para realizar consultas nativas SQL"
+        ],
+        answer: "a"
+    },{
+        question: "Qual linguagem de consulta é usada pelo JPA para realizar operações de busca?",
+        options: [
+            "SQL nativo",
+            "HQL",
+            "JPQL",
+            "XML"
+        ],
+        answer: "c"
+    },{
+        question: "Qual das afirmações é verdadeira sobre o Spring Framework?",
+        options: [
+            "É usado principalmente para desenvolver aplicações Android",
+            "É uma ferramenta fechada, sem código aberto",
+            "É um framework de código aberto para desenvolver aplicações Java",
+            "Não suporta APIs REST e RESTful"
+        ],
+        answer: "c"
+    },
+    {
+        question: "Qual anotação em Spring é usada para criar um controlador REST com respostas JSON por padrão?",
+        options: [
+            "@RestController",
+            "@Controller",
+            "@Bean",
+            "@Autowired"
+        ],
+        answer: "a"
+    },
+    {
+        question: "Qual anotação no Spring Framework injeta uma dependência gerenciada pelo Spring?",
+        options: [
+            "@Controller",
+            "@Autowired",
+            "@Repository",
+            "@RestController"
+        ],
+        answer: "b"
+    },
+    {
+        question: "Para que serve o subgrupo Spring Data JPA?",
+        options: [
+            "Gerenciar transações financeiras",
+            "Auxiliar na criação de APIs SOAP",
+            "Facilitar a manipulação de entidades na camada de persistência",
+            "Gerar relatórios gráficos automaticamente"
+        ],
+        answer: "c"
+    },
+    {
+        question: "Qual anotação em Spring Data JPA é usada para marcar uma interface de repositório?",
+        options: [
+            "@Controller",
+            "b) @RestController",
+            "@Autowired",
+            "@Repository"
+        ],
+        answer: "d"
+    },
+    {
+        question: "O que significa REST (Representational State Transfer)?",
+        options: [
+            "Uma linguagem de consulta para bancos de dados",
+            "Um protocolo específico para dispositivos móveis",
+            "Um estilo arquitetural para troca de informações entre sistemas",
+            "Um padrão exclusivo para APIs SOAP"
+        ],
+        answer: "c"
+    },
+    {
+        question: "Qual dos seguintes métodos HTTP é utilizado para buscar um recurso em uma API REST?",
+        options: [
+            "POST",
+            "GET",
+            "PUT",
+            "DELETE"
+        ],
+        answer: "b"
+    },
+    {
+        question: "Qual formato de dados é geralmente utilizado em APIs REST para troca de informações?",
+        options: [
+            "XML",
+            "JSON",
+            "CSV",
+            "HTML"
+        ],
+        answer: "b"
+    },
+    {
+        question: "Qual das seguintes opções NÃO é um método HTTP comum em REST?",
+        options: [
+            "CONNECT",
+            "PUT",
+            "POST",
+            "DELETE"
+        ],
+        answer: "a"
+    }
+];
+
+        function shuffleArray(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+        }
+
+        function startGame() {
+            shuffleArray(questions);
+            correctAnswers = 0;
+            updateCounter();
+            loadQuestion();
+        }
+
+        function checkAnswer(selectedOption) {
+            const currentQuestion = questions[currentQuestionIndex];
+            const correctAnswer = currentQuestion.answer;
+            const feedback = document.getElementById("feedback");
+            const options = document.querySelectorAll(".option");
+
+            options.forEach(option => option.style.pointerEvents = "none");
+
+            if (selectedOption === correctAnswer) {
+                feedback.textContent = "Correto! 🎉";
+                feedback.className = "alert alert-success";
+                correctAnswers++;
+                document.querySelector(`[onclick="checkAnswer('${selectedOption}')"]`).classList.add("correct");
+            } else {
+                feedback.textContent = `Errado! A resposta certa é: ${correctAnswer}`;
+                feedback.className = "alert alert-danger";
+                document.querySelector(`[onclick="checkAnswer('${selectedOption}')"]`).classList.add("wrong");
+            }
+
+            feedback.style.display = "block";
+            document.getElementById("nextBtn").style.display = "block";
+            updateCounter();
+        }
+
+        function nextQuestion() {
+            currentQuestionIndex++;
+            if (currentQuestionIndex < questions.length) {
+                loadQuestion();
+                document.getElementById("feedback").style.display = "none";
+                document.getElementById("nextBtn").style.display = "none";
+            } else {
+                document.getElementById("question").textContent = "Você completou o jogo!";
+                document.getElementById("options").style.display = "none";
+                document.getElementById("feedback").textContent = `Parabéns! Você acertou ${correctAnswers} de ${questions.length}.`;
+                document.getElementById("feedback").className = "alert alert-success";
+                document.getElementById("restartBtn").style.display = "block";
+            }
+        }
+
+        function loadQuestion() {
+            const currentQuestion = questions[currentQuestionIndex];
+            const questionEl = document.getElementById("question");
+            const optionsEl = document.getElementById("options");
+
+            questionEl.textContent = currentQuestion.question;
+            optionsEl.innerHTML = currentQuestion.options.map(
+                (option, index) => `<div class="option" onclick="checkAnswer('${String.fromCharCode(97 + index)}')">${String.fromCharCode(97 + index)}) ${option}</div>`
+            ).join("");
+        }
+
+        function updateCounter() {
+            document.getElementById("counter").textContent = `Respostas corretas: ${correctAnswers}`;
+        }
+
+        function restartGame() {
+            currentQuestionIndex = 0;
+            document.getElementById("options").style.display = "block";
+            document.getElementById("restartBtn").style.display = "none";
+            document.getElementById("feedback").style.display = "none";
+            startGame();
+        }
+
+        startGame();
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
