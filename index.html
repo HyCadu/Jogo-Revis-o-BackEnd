@@ -14,11 +14,13 @@
             display: flex;
             justify-content: center;
             align-items: center;
-            overflow: hidden;
+            overflow: auto; /* Permite rolagem */
+            padding: 20px; /* Evita que o conteúdo grude na borda */
         }
         .game-container {
             max-width: 800px;
-            padding: 30px;
+            width: 100%;
+            padding: 20px;
             background-color: #ffffff;
             color: #4c1a57;
             box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
@@ -26,6 +28,7 @@
             position: relative;
             overflow: hidden;
             animation: fadeIn 1s ease-in-out;
+            word-wrap: break-word; /* Quebra palavras longas */
         }
         .game-container:before {
             content: '';
